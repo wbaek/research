@@ -2,6 +2,7 @@ jupyter
 matplotlib
 numpy
 scipy
+sklearn
 
 opencv-python
 opencv-contrib-python
