@@ -11,10 +11,9 @@ brew install https://gist.githubusercontent.com/leesheppard/69a283ee4af484e20298
 
 ### for ubuntu
 
-* install ImageMagicl
+* install ImageMagick
 ```bash
-apt-get install libsm6 
-apt-get install libmagickwand-dev
+apt-get install -y libsm6 libmagickwand-dev
 ```
 
 ## install
