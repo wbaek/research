@@ -1,1 +1,1 @@
-PORT=1040 TOKEN=password jupyter notebook --allow-root --ip 0.0.0.0 --notebook-dir ./notebooks --config ./confs/jupyter_notebook_config.py > logs/jupyter_notebook.stdout 2> logs/jupyter_notebook.stderr &
+PORT=1030 TOKEN=password jupyter notebook --allow-root --ip 0.0.0.0 --notebook-dir ./notebooks --config ./confs/jupyter_notebook_config.py > logs/jupyter_notebook.stdout 2> logs/jupyter_notebook.stderr &

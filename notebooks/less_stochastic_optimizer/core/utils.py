@@ -22,7 +22,8 @@ def loop(model, epoch=30, summary_dir='./summary/test'):
     logging.info('session initialized')
     
     setup_summary_dir(summary_dir)
-    writer = tf.summary.FileWriter(summary_dir, sess.graph)
+    train_writer = tf.summary.FileWriter(summary_dir+'/train', sess.graph)
+    valid_writer = tf.summary.FileWriter(summary_dir+'/valid')
     
     history = []
     for e in range(epoch):
@@ -33,10 +34,12 @@ def loop(model, epoch=30, summary_dir='./summary/test'):
         history.append( result )
         
         message = ['[{:04d}]'.format(e)]
-        for key, values in result.items():
+        for key in ['train', 'valid']:
+            values = result[key]
             message.append( '[{}] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(key, values['cost'], values['accuracy'], values['elapsed']) )
         logging.info(' '.join( message ))
-        writer.add_summary(result['train']['summary'], result['train']['step'])
+        train_writer.add_summary(result['train']['summary'], (result['train']['step']+1)*model.batch_size)
+        valid_writer.add_summary(result['valid']['summary'], (result['valid']['step']+1)*model.batch_size)
     return history
 
 def train(sess, model):
@@ -54,6 +57,7 @@ def train(sess, model):
 #            run_metadata=run_metadata
         )
         elapsed += time.time() - timestamp
+        logging.debug('cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, elapsed) )
 
         costs.append(cost)
         accuracies.append(accuracy)
@@ -76,7 +80,9 @@ def valid(sess, model):
         
         costs.append(cost)
         accuracies.append(accuracy)
-    return {'cost':np.mean(costs), 'accuracy':np.mean(accuracies), 'elapsed':elapsed}
+        
+        summary_str, step = sess.run([model.summary_merged, model.global_step], feed_dict=dict(zip(model.inputs, datapoint)) )
+    return {'cost':np.mean(costs), 'accuracy':np.mean(accuracies), 'elapsed':elapsed, 'summary':summary_str, 'step':step}
 
 def plot_jupyter(history):
     import matplotlib
