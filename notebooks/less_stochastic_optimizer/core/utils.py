@@ -14,10 +14,7 @@ def setup_summary_dir(summary_dir = './summary/test'):
         shutil.rmtree(summary_dir)
     os.makedirs(summary_dir)
 
-    return 
-
-def loop(model, epoch=30, summary_dir='./summary/test'):
-    sess = tf.Session()
+def loop(sess, model, epoch=30, summary_dir='./summary/test'):
     sess.run(tf.global_variables_initializer())
     logging.info('session initialized')
     
@@ -28,8 +25,8 @@ def loop(model, epoch=30, summary_dir='./summary/test'):
     history = []
     for e in range(epoch):
         result = {
-            'train':train(sess, model),
-            'valid':valid(sess, model)
+            'train':train(sess, model, train_writer),
+            'valid':valid(sess, model, valid_writer)
         }
         history.append( result )
         
@@ -38,11 +35,10 @@ def loop(model, epoch=30, summary_dir='./summary/test'):
             values = result[key]
             message.append( '[{}] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(key, values['cost'], values['accuracy'], values['elapsed']) )
         logging.info(' '.join( message ))
-        train_writer.add_summary(result['train']['summary'], (result['train']['step']+1)*model.batch_size)
-        valid_writer.add_summary(result['valid']['summary'], (result['valid']['step']+1)*model.batch_size)
+    sess.close()
     return history
 
-def train(sess, model):
+def train(sess, model, writer):
     model.dataflow['train'].reset_state()
     costs, accuracies = [], []
     
@@ -56,16 +52,18 @@ def train(sess, model):
 #            options=run_options,
 #            run_metadata=run_metadata
         )
-        elapsed += time.time() - timestamp
-        logging.debug('cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, elapsed) )
+        e = time.time() - timestamp
+        elapsed += e
+        logging.debug('[train] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, e) )
 
         costs.append(cost)
         accuracies.append(accuracy)
         
         summary_str, step = sess.run([model.summary_merged, model.global_step], feed_dict=dict(zip(model.inputs, datapoint)) )
-    return {'cost':np.mean(costs), 'accuracy':np.mean(accuracies), 'elapsed':elapsed, 'summary':summary_str, 'step':step}
+        writer.add_summary(summary_str, (step+1)*model.batch_size)
+    return {'cost':np.mean(costs), 'accuracy':np.mean(accuracies), 'elapsed':elapsed}
 
-def valid(sess, model):
+def valid(sess, model, writer):
     model.dataflow['valid'].reset_state()
     costs, accuracies = [], []
     
@@ -76,13 +74,16 @@ def valid(sess, model):
         cost, accuracy = sess.run(
             [model.cost, model.accuracy],
             feed_dict=dict(zip(model.inputs, datapoint)))
-        elapsed += time.time() - timestamp
+        e = time.time() - timestamp
+        elapsed += e
+        logging.debug('[valid] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, e) )
         
         costs.append(cost)
         accuracies.append(accuracy)
         
         summary_str, step = sess.run([model.summary_merged, model.global_step], feed_dict=dict(zip(model.inputs, datapoint)) )
-    return {'cost':np.mean(costs), 'accuracy':np.mean(accuracies), 'elapsed':elapsed, 'summary':summary_str, 'step':step}
+        writer.add_summary(summary_str, (step+1)*model.batch_size)
+    return {'cost':np.mean(costs), 'accuracy':np.mean(accuracies), 'elapsed':elapsed}
 
 def plot_jupyter(history):
     import matplotlib
@@ -100,4 +101,9 @@ def plot_jupyter(history):
             ax.plot(np.array([h for h in range(len(history))]), np.array([np.sum(h[mode][label]) for h in history]), label=mode)
         ax.legend()
     plt.tight_layout()
+    
+    print('average elapsed time train:{:.6f}sec valid:{:.6f}sec'.format(
+        np.mean([h['train']['elapsed'] for h in history[5:]]),
+        np.mean([h['valid']['elapsed'] for h in history[5:]]) )
+         )
     

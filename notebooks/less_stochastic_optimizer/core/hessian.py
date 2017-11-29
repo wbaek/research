@@ -53,7 +53,7 @@ def hessians_highrank(ys, xs, gradients=None, name="hessians", colocate_gradient
     hessians.append(hessian.stack())
   return hessians
 
-def diagonal_inverse_hessians_highrank(ys, xs, gradients=None, name="hessians", colocate_gradients_with_ops=False,
+def diagonal_hessians_highrank(ys, xs, gradients=None, name="hessians", colocate_gradients_with_ops=False,
             gate_gradients=False, aggregation_method=None):
   """Constructs the Hessian (one or more rank matrix) of sum of `ys` with respect to `x` in `xs`.
   `hessians_highrank()` adds ops to the graph to output the Hessian matrix of `ys`
@@ -92,7 +92,7 @@ def diagonal_inverse_hessians_highrank(ys, xs, gradients=None, name="hessians", 
     
     n = tf.size(x)
     g = tf.gradients(_gradient, x, **kwargs)[0]
-    hessian = tf.clip_by_value( 1.0 / tf.reshape(g, [-1]), -1e1, 1e1 )
+    hessian = tf.reshape(g, [-1])
     hessians.append(hessian)
   return hessians
 

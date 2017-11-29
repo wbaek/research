@@ -61,15 +61,16 @@ class ModelMNIST10x10_base(object):
     # interface
     def compute_gradient(self, cost, var_refs):
         raise NotImplementedError
+        
         grads = tf.gradients(
                 cost, var_refs,
                 grad_ys=None, aggregation_method=None, colocate_gradients_with_ops=True)
         
-        for l, g in zip(range(len(grads)), grads):
+        for l, g, v in zip(range(len(grads)), grads, var_refs):
             delta = g
-            tf.summary.histogram('update/gradient/{}'.format(l), g)
-            tf.summary.histogram('update/delta/{}'.format(l), delta)
-            
+            tf.summary.histogram('{}'.format(v.name.replace(':', '_')), v)
+            tf.summary.histogram('{}/gradient'.format(v.name.replace(':', '_')), g)
+            tf.summary.histogram('{}/delta'.format(v.name.replace(':', '_')), delta)
         return grads
     
     def _get_optimize_operator(self, cost):
@@ -106,6 +107,6 @@ class ModelMNIST10x10_base(object):
         ds = AugmentImageComponent(ds, augmentors)
         ds = BatchData(ds, BATCH_SIZE, remainder=not isTrain)
         if isTrain:
-            ds = PrefetchData(ds, 3, 2)
+            ds = PrefetchData(ds, 12, 4)
         return ds
     
