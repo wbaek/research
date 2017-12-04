@@ -14,7 +14,7 @@ def setup_summary_dir(summary_dir = './summary/test'):
         shutil.rmtree(summary_dir)
     os.makedirs(summary_dir)
 
-def loop(sess, model, epoch=30, summary_dir='./summary/test'):
+def loop(sess, model, epoch=30, summary_dir='./summary/test', epoch_steps=1e10):
     sess.run(tf.global_variables_initializer())
     logging.info('session initialized')
     
@@ -25,7 +25,7 @@ def loop(sess, model, epoch=30, summary_dir='./summary/test'):
     history = []
     for e in range(epoch):
         result = {
-            'train':train(sess, model, train_writer),
+            'train':train(sess, model, train_writer, epoch_steps),
             'valid':valid(sess, model, valid_writer)
         }
         history.append( result )
@@ -38,12 +38,17 @@ def loop(sess, model, epoch=30, summary_dir='./summary/test'):
     sess.close()
     return history
 
-def train(sess, model, writer):
+def train(sess, model, writer, steps=1e10):
     model.dataflow['train'].reset_state()
     costs, accuracies = [], []
     
     elapsed = 0
+    s = 0
     for datapoint in model.dataflow['train'].get_data():
+        s += 1
+        if s > steps:
+            break
+        
         timestamp = time.time()
         datapoint.append( sklearn.preprocessing.label_binarize( datapoint[1], range(10) ).astype(np.float32) )
         _, cost, accuracy = sess.run(
