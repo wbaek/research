@@ -16,7 +16,7 @@ def setup_summary_dir(summary_dir = './summary/test'):
 
 def loop(sess, model, epoch=30, summary_dir='./summary/test', epoch_steps=1e10):
     sess.run(tf.global_variables_initializer())
-    logging.info('session initialized')
+    logger.info('session initialized')
     
     setup_summary_dir(summary_dir)
     train_writer = tf.summary.FileWriter(summary_dir+'/train', sess.graph)
@@ -34,7 +34,7 @@ def loop(sess, model, epoch=30, summary_dir='./summary/test', epoch_steps=1e10):
         for key in ['train', 'valid']:
             values = result[key]
             message.append( '[{}] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(key, values['cost'], values['accuracy'], values['elapsed']) )
-        logging.info(' '.join( message ))
+        logger.info(' '.join( message ))
     sess.close()
     return history
 
@@ -59,7 +59,7 @@ def train(sess, model, writer, steps=1e10):
         )
         e = time.time() - timestamp
         elapsed += e
-        logging.debug('[train] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, e) )
+        logger.debug('[train] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, e) )
 
         costs.append(cost)
         accuracies.append(accuracy)
@@ -81,7 +81,7 @@ def valid(sess, model, writer):
             feed_dict=dict(zip(model.inputs, datapoint)))
         e = time.time() - timestamp
         elapsed += e
-        logging.debug('[valid] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, e) )
+        logger.debug('[valid] cost:{:.3f} accuracy:{:.3f} elapsed:{:.3f}sec'.format(cost, accuracy, e) )
         
         costs.append(cost)
         accuracies.append(accuracy)

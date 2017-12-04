@@ -3,6 +3,9 @@ from functools import reduce
 from tensorflow.python.ops import gradients_impl
 from tensorflow.python.ops import array_ops, tensor_array_ops, control_flow_ops
 
+import logging
+logger = logging.getLogger(__name__)
+
 def hessians_highrank(ys, xs, gradients=None, name="hessians", colocate_gradients_with_ops=False,
             gate_gradients=False, aggregation_method=None):
   """Constructs the Hessian (one or more rank matrix) of sum of `ys` with respect to `x` in `xs`.
@@ -37,20 +40,23 @@ def hessians_highrank(ys, xs, gradients=None, name="hessians", colocate_gradient
   hessians = []
   _gradients = tf.gradients(ys, xs, **kwargs) if gradients is None else gradients
   for i, _gradient, x in zip(range(len(xs)), _gradients, xs):
-    shape = x.shape
-    _gradient = tf.reshape(_gradient, [-1])
+    if _gradient is None:
+      hessians.append(None)
+    else:
+      shape = x.shape
+      _gradient = tf.reshape(_gradient, [-1])
     
-    n = tf.size(x)
-    loop_vars = [
-      array_ops.constant(0, tf.int32),
-      tensor_array_ops.TensorArray(x.dtype, n)
-    ]
-    _, hessian = control_flow_ops.while_loop(
-      lambda j, _: j < n,
-      lambda j, result: (j + 1, result.write(j, tf.gradients(_gradient[j], x, **kwargs)[0])),
-      loop_vars
-    )
-    hessians.append(hessian.stack())
+      n = tf.size(x)
+      loop_vars = [
+        array_ops.constant(0, tf.int32),
+        tensor_array_ops.TensorArray(x.dtype, n)
+      ]
+      _, hessian = control_flow_ops.while_loop(
+        lambda j, _: j < n,
+        lambda j, result: (j + 1, result.write(j, tf.gradients(_gradient[j], x, **kwargs)[0])),
+        loop_vars
+      )
+      hessians.append(hessian.stack())
   return hessians
 
 def diagonal_hessians_highrank(ys, xs, gradients=None, name="hessians", colocate_gradients_with_ops=False,
@@ -87,12 +93,15 @@ def diagonal_hessians_highrank(ys, xs, gradients=None, name="hessians", colocate
   hessians = []
   _gradients = tf.gradients(ys, xs, **kwargs) if gradients is None else gradients
   for i, _gradient, x in zip(range(len(xs)), _gradients, xs):
-    shape = x.shape
-    _gradient = tf.reshape(_gradient, [-1])
+    if _gradient is None:
+      hessian = None
+    else:
+      shape = x.shape
+      _gradient = tf.reshape(_gradient, [-1])
     
-    n = tf.size(x)
-    g = tf.gradients(_gradient, x, **kwargs)[0]
-    hessian = tf.reshape(g, [-1])
+      n = tf.size(x)
+      g = tf.gradients(_gradient, x, **kwargs)[0]
+      hessian = tf.reshape(g, [-1])
     hessians.append(hessian)
   return hessians
 
