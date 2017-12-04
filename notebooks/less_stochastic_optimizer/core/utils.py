@@ -99,6 +99,7 @@ def plot_jupyter(history):
             if not label in history[0][mode]:
                 continue
             ax.plot(np.array([h for h in range(len(history))]), np.array([np.sum(h[mode][label]) for h in history]), label=mode)
+        ax.set_ylim([0.0,1.0])
         ax.legend()
     plt.tight_layout()
     
