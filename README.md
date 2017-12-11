@@ -7,6 +7,7 @@
 
 ```bash
 brew install dependencies/imagemagick.rb
+pip install -r requirements_pre_for_mac.txt
 ```
 
 ### for ubuntu

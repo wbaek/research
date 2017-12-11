@@ -9,3 +9,6 @@ opencv-contrib-python
 
 tensorpack
 jupyter-tensorboard
+
+torchvision
+tensorboard-pytorch
